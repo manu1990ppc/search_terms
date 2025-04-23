@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import openai
 import os
+import traceback
 
 app = Flask(__name__)
 openai.api_key = os.environ.get("OPENAI_API_KEY")
@@ -36,6 +37,9 @@ def analyze_term():
         try:
             result = eval(raw_content)
         except Exception as parse_error:
+            print("⚠️ Error al interpretar la respuesta de GPT:")
+            print("Contenido devuelto por GPT:\n", raw_content)
+            print("Excepción:\n", traceback.format_exc())
             return jsonify({
                 "error": "Respuesta no interpretable como JSON",
                 "raw_content": raw_content,
@@ -45,8 +49,11 @@ def analyze_term():
         return jsonify(result)
 
     except Exception as e:
+        print("❌ Error interno en /analyze:")
+        print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
+# Render necesita este bloque para escuchar correctamente
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
