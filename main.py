@@ -49,8 +49,9 @@ def analyze_term():
         return jsonify(result)
 
     except Exception as e:
-        print("❌ Error interno en /analyze:")
-        print(traceback.format_exc())
+        import sys
+        print("❌ Error interno en /analyze:", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
         return jsonify({"error": str(e)}), 500
 
 # Render necesita este bloque para escuchar correctamente
