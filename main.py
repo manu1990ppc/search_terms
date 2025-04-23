@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify
-import openai
+from openai import OpenAI
 import os
 import traceback
+import sys
 
 app = Flask(__name__)
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 @app.route('/analyze', methods=['POST'])
 def analyze_term():
@@ -26,7 +27,7 @@ def analyze_term():
             f"- partial_term (palabra irrelevante, si aplica)"
         )
 
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3
@@ -37,9 +38,9 @@ def analyze_term():
         try:
             result = eval(raw_content)
         except Exception as parse_error:
-            print("⚠️ Error al interpretar la respuesta de GPT:")
-            print("Contenido devuelto por GPT:\n", raw_content)
-            print("Excepción:\n", traceback.format_exc())
+            print("⚠️ Error al interpretar la respuesta de GPT:", file=sys.stderr)
+            print("Contenido devuelto por GPT:\n", raw_content, file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
             return jsonify({
                 "error": "Respuesta no interpretable como JSON",
                 "raw_content": raw_content,
@@ -49,12 +50,10 @@ def analyze_term():
         return jsonify(result)
 
     except Exception as e:
-        import sys
         print("❌ Error interno en /analyze:", file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
         return jsonify({"error": str(e)}), 500
 
-# Render necesita este bloque para escuchar correctamente
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
